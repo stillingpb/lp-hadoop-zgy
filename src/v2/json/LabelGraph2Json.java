@@ -1,4 +1,4 @@
-package v1.json;
+package v2.json;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -15,10 +15,12 @@ import java.util.Map.Entry;
  * 解析图为json串 图的格式： 每一行："id1制表符id2",例如: "1\t5"
  * 
  */
-public class Graph2Json implements Runnable {
-	private static final String GRAPH_PATH = "graph"; // 输入路径
-	private static final String JSON_PATH = "graph_out.json"; // 输出路径
-	private static final char GRAPH_DELIMITER = '\t'; // 边的分割字符
+public class LabelGraph2Json implements Runnable {
+	private static final String GRAPH_PATH = "graph"; // 输入图路径
+	private static final String LABEL_PATH = "label"; // 输入标签路径
+	private static final String JSON_PATH = "labelGraph.json"; // 输出路径
+	private static final char GRAPH_DELIMITER = '\t'; // graph文件中的分割字符
+	private static final char LABEL_DELIMITER = '\t'; // label文件中的分割字符
 
 	private int indentNum = 0; // 控制缩进数目
 
@@ -29,6 +31,7 @@ public class Graph2Json implements Runnable {
 	public void run() {
 
 		parseGraph();
+		parseLabel();
 
 		// 生成json串
 		sb.append("{\n");
@@ -38,6 +41,29 @@ public class Graph2Json implements Runnable {
 		sb.append('}');
 
 		printGraph();
+	}
+
+	private void parseLabel() {
+		BufferedReader br = null;
+		try {
+			br = new BufferedReader(new FileReader(LABEL_PATH));
+			String line;
+			while ((line = br.readLine()) != null) {
+				int delIndex = line.indexOf(LABEL_DELIMITER);
+				String id = line.substring(0, delIndex);
+				String label = line.substring(delIndex + 1);
+				addLabel(id, label);
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				if (br != null)
+					br.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
 	}
 
 	private void printGraph() {
@@ -69,9 +95,7 @@ public class Graph2Json implements Runnable {
 			Node node = entry.getValue();
 			sb.append(getIndent() + "\"" + id + "\":{\n");
 			addIndent();
-			sb.append(getIndent() + "\"borders\":" + node.linkNodes.size()
-					+ ",\n");
-			sb.append(getIndent() + "\"length\":20\n");
+			sb.append(getIndent() + "\"region\":\"" + node.label + "\"\n");
 			reduceIndent();
 			sb.append(getIndent() + "},\n");
 		}
@@ -94,11 +118,7 @@ public class Graph2Json implements Runnable {
 			sb.append(getIndent() + "\"" + id + "\":{\n");
 			addIndent();
 			for (String id2 : node.linkNodes) {
-				sb.append(getIndent() + "\"" + id2 + "\":{\n");
-				addIndent();
-				sb.append(getIndent() + "\"border\":20\n");
-				reduceIndent();
-				sb.append(getIndent() + "},\n");
+				sb.append(getIndent() + "\"" + id2 + "\":{},\n");
 			}
 			sb.deleteCharAt(sb.length() - 2); // 删掉逗号
 			reduceIndent();
@@ -132,6 +152,10 @@ public class Graph2Json implements Runnable {
 				e.printStackTrace();
 			}
 		}
+	}
+
+	private void addLabel(String id, String label) {
+		nodes.get(id).label = label;
 	}
 
 	private void addNode(String id1, String id2) {
@@ -175,6 +199,6 @@ public class Graph2Json implements Runnable {
 	}
 
 	public static void main(String[] args) {
-		new Thread(new Graph2Json()).start();
+		new Thread(new LabelGraph2Json()).start();
 	}
 }

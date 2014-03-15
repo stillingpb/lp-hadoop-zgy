@@ -1,4 +1,4 @@
-package v1.json;
+package v2.json;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -17,7 +17,7 @@ import java.util.Map.Entry;
  */
 public class Graph2Json implements Runnable {
 	private static final String GRAPH_PATH = "graph"; // 输入路径
-	private static final String JSON_PATH = "graph_out.json"; // 输出路径
+	private static final String JSON_PATH = "graph.json"; // 输出路径
 	private static final char GRAPH_DELIMITER = '\t'; // 边的分割字符
 
 	private int indentNum = 0; // 控制缩进数目
@@ -94,11 +94,7 @@ public class Graph2Json implements Runnable {
 			sb.append(getIndent() + "\"" + id + "\":{\n");
 			addIndent();
 			for (String id2 : node.linkNodes) {
-				sb.append(getIndent() + "\"" + id2 + "\":{\n");
-				addIndent();
-				sb.append(getIndent() + "\"border\":20\n");
-				reduceIndent();
-				sb.append(getIndent() + "},\n");
+				sb.append(getIndent() + "\"" + id2 + "\":{ \"border\":20 },\n");
 			}
 			sb.deleteCharAt(sb.length() - 2); // 删掉逗号
 			reduceIndent();

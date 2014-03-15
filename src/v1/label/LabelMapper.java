@@ -1,10 +1,12 @@
 package v1.label;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
+import java.util.Random;
 import java.util.StringTokenizer;
 
 import org.apache.hadoop.fs.FSDataInputStream;
@@ -28,6 +30,8 @@ public class LabelMapper extends
 	private static String COMMUNITY = ROOT + "/community";
 
 	private Map<Integer, Integer> allLabels = new HashMap<Integer, Integer>();// <side,label>
+
+	private Random random = new Random(); // 产生随机数
 
 	public void setup(Context context) throws IOException, InterruptedException {
 		String strPath = context.getConfiguration().get("lp.label.tmp");
@@ -68,6 +72,23 @@ public class LabelMapper extends
 			}
 		}
 
+//		int maxLabelSum = 1;
+//		List<Integer> candidateLabel = new ArrayList<Integer>();
+//		for (Entry<Integer, Integer> entry : neighberLables.entrySet()) {
+//			if (maxLabelSum < entry.getValue()) {
+//				maxLabelSum = entry.getValue();
+//				candidateLabel.clear();
+//				candidateLabel.add(entry.getValue());
+//			} else if (maxLabelSum == entry.getValue()) {
+//				candidateLabel.add(entry.getValue());
+//			}
+//		}
+//
+//		/* 在拥有相同数量的标签中，随机选择一个标签 */
+//		int newLabel = candidateLabel
+//				.get(random.nextInt(candidateLabel.size()));
+//		outLabel.set(newLabel);
+
 		int maxLabelSum = 1;
 		int maxLabel = allLabels.get(outSide.get());
 		for (Entry<Integer, Integer> entry : neighberLables.entrySet()) {
@@ -79,8 +100,8 @@ public class LabelMapper extends
 					maxLabel = entry.getKey();
 			}
 		}
-
 		outLabel.set(maxLabel);
+
 		context.write(outSide, outLabel);
 	}
 
