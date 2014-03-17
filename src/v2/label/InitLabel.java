@@ -12,7 +12,6 @@ import org.apache.hadoop.fs.Path;
 
 /**
  * 初始化标签
- * @author pb
  *
  */
 @Deprecated

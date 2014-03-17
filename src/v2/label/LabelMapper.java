@@ -11,50 +11,58 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Counter;
 import org.apache.hadoop.mapreduce.Mapper;
-import org.apache.hadoop.mapreduce.lib.input.FileInputFormat.Counter;
 
+/**
+ * the main worker of lp algorithm
+ * 
+ */
 public class LabelMapper extends
 		Mapper<LongWritable, Text, IntWritable, IntWritable> {
 
-	private static String ROOT = "/lp";
-	private static String GRAPH_PATH = ROOT + "/graph";
-	private static String TMP = ROOT + "/tmp";
-	private static String TMP_GRAPH = ROOT + "/graph.tmp";
-	private static String TMP_GRAPH_SWAP = TMP + "/graph_swap";
-	private static String TMP_LABEL = ROOT + "/label.tmp";
-	private static String TMP_LABEL_SWAP = TMP + "/label_swap";
-	private static String COMMUNITY = ROOT + "/community";
-
+	/**
+	 * 所有顶点的标签，只能被getVertex()方法使用
+	 */
 	private Map<Integer, Integer> allLabels = new HashMap<Integer, Integer>();// <vertex,label>
 
-	private ILabelChoosen labelChoose; // 选择标签的算法很多，具体选哪种，有参数决定
+	private ILabelChoosen labelChoose; // 选择标签的算法很多，具体选哪种，由参数决定
+
+	private boolean asynchronousLabelChange;// 是否采用异步方式改变标签
+
+	private Counter lableChangedVertex;
 
 	public void setup(Context context) throws IOException, InterruptedException {
-		// 选择 标签选择时使用的算法
+		// 进行标签选择时使用的算法
 		String labelChooseMethod = context.getConfiguration().get(
 				"lp.label.choose.method");
-		// labelChooseMethod = "random";
-		labelChooseMethod = "max";
 		labelChoose = LabelChoosenFactory
 				.createLabelChoosenFactory(labelChooseMethod);
 
+		// 获取标签改变的方式，是异步还是同步
+		asynchronousLabelChange = context.getConfiguration().getBoolean(
+				"lp.label.asynchronous", false);
+
 		// 读取标签文件，将标签全部读到内存中
 		String strPath = context.getConfiguration().get("lp.label.tmp");
-		strPath = TMP_LABEL;
 		Path labelPath = new Path(strPath);
-
 		FileSystem fs = FileSystem.get(context.getConfiguration());
-		FSDataInputStream inStream = fs.open(labelPath);
-		String str = inStream.readLine();
-		while (str != null) {
-			StringTokenizer token = new StringTokenizer(str);
-			int vertex = Integer.parseInt(token.nextToken());
-			int label = Integer.parseInt(token.nextToken());
-			allLabels.put(vertex, label);
-			str = inStream.readLine();
+		if (fs.exists(labelPath)) { // 如果label文件存在,就把记录的标签读进来
+			FSDataInputStream inStream = fs.open(labelPath);
+			String str = inStream.readLine();
+			while (str != null) {
+				StringTokenizer token = new StringTokenizer(str);
+				int vertex = Integer.parseInt(token.nextToken());
+				int label = Integer.parseInt(token.nextToken());
+				allLabels.put(vertex, label);
+				str = inStream.readLine();
+			}
+			inStream.close();
 		}
-		inStream.close();
+
+		// 设定统计顶点标签变化的计数器
+		lableChangedVertex = context.getCounter(JudgeMonitor.COUNTER_GROUP,
+				JudgeMonitor.COUNTER_VERTEX_LABEL_CHANGED);
 	}
 
 	private IntWritable outVertex = new IntWritable();
@@ -84,21 +92,37 @@ public class LabelMapper extends
 				neighberLabels.put(label, 1);
 		}
 
+		int oldLabel = getVertexLabel(outVertex.get());
+
 		// 选择出顶点新的标签
 		int newLabel = labelChoose.chooseLabel(neighberLabels,
 				getVertexLabel(outVertex.get()));
 		outLabel.set(newLabel);
 		context.write(outVertex, outLabel);
 
-		org.apache.hadoop.mapreduce.Counter counter = context
-				.getCounter(Counter.BYTES_READ);
-		counter.increment(123);
+		// 修改顶点的标签
+		asynchronizedLabelChange(outVertex.get(), newLabel);
+
+		// 如果标签发生了变化
+		if (oldLabel != newLabel)
+			lableChangedVertex.increment(1);
 	}
 
-	private int getVertexLabel(int neig) {
-		if (!allLabels.containsKey(neig))
-			allLabels.put(neig, neig);
-		return allLabels.get(neig);
+	/**
+	 * 异步变化顶点的标签
+	 * 
+	 * @param vertex
+	 * @param newLabel
+	 */
+	private void asynchronizedLabelChange(int vertex, int newLabel) {
+		if (asynchronousLabelChange) // 如果需要异步更新顶点的标签
+			allLabels.put(vertex, newLabel);
+	}
+
+	private int getVertexLabel(int vertex) {
+		if (!allLabels.containsKey(vertex))
+			allLabels.put(vertex, vertex);
+		return allLabels.get(vertex);
 	}
 
 	/**

@@ -5,6 +5,10 @@ import java.io.IOException;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapreduce.Reducer;
 
+/**
+ * do nothing
+ * 
+ */
 public class LabelReducer extends
 		Reducer<IntWritable, IntWritable, IntWritable, IntWritable> {
 

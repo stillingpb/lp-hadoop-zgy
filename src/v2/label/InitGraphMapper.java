@@ -6,6 +6,7 @@ import java.util.StringTokenizer;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Counter;
 import org.apache.hadoop.mapreduce.Mapper;
 
 public class InitGraphMapper extends
@@ -27,6 +28,10 @@ public class InitGraphMapper extends
 		outVertex2.set(v2);
 		context.write(outVertex1, outVertex2);
 		context.write(outVertex2, outVertex1);
+
+		Counter graphEdgeNum = context.getCounter(JudgeMonitor.COUNTER_GROUP,
+				JudgeMonitor.COUNTER_EDGES);
+		graphEdgeNum.increment(1);
 	}
 
 	public void cleanup(Context context) throws IOException,
