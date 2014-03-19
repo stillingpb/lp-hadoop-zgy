@@ -1,4 +1,4 @@
-package v2.label;
+package v3.label;
 
 import java.io.IOException;
 
@@ -12,6 +12,8 @@ import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 
+import v3.label.OptimizeController.OptimizeState;
+
 /**
  * 控制标签传递算法的运行
  * 
@@ -24,11 +26,14 @@ public class LabelRun {
 	private static final String TMP = ROOT + "/tmp";
 	private static final String TMP_GRAPH = ROOT + "/graph.tmp"; // graph中间文件
 	private static final String TMP_GRAPH_SWAP = TMP + "/graph_swap";
-	private static final String TMP_LABEL = ROOT + "/label.tmp"; // label中间文件
+	private static final String TMP_LABEL_OPTIMIZE = ROOT
+			+ "/label.optimize.tmp"; // label 优化算法中间文件
 	private static final String TMP_LABEL_SWAP = TMP + "/label_swap";
 	// public static final String COMMUNITY = ROOT + "/community"; // 結果文件
 
 	private static final JudgeMonitor judgeMonitor = new JudgeMonitor();// 控制系统的运行状态
+
+	private static final OptimizeController optimizeController = new OptimizeController();
 
 	/**
 	 * 将hadoop中存有数据的文件夹存储到指定文件中
@@ -116,12 +121,17 @@ public class LabelRun {
 	 */
 	private static void runLabelPropagation(Configuration conf, FileSystem fs)
 			throws IOException, InterruptedException, ClassNotFoundException {
-		conf.set("lp.label.tmp", TMP_LABEL);
-		//设置标签选择算法
-		conf.set("lp.label.choose.method",
-				LabelChoosenFactory.MAX_LABEL_CHOOSEN);
-		//设置标签迭代是否异步进行
-		conf.setBoolean("lp.label.asynchronous", true);
+		conf.set("lp.optimize.label.tmp", TMP_LABEL_OPTIMIZE);
+
+		// 设置标签选择算法
+		conf.set("lp.label.choose.method", PropertyManager.LABEL_CHOOSEN_METHOD);
+
+		// 设置标签迭代是否异步进行
+		conf.setBoolean("lp.label.asynchronous",
+				PropertyManager.LABEL_PROPAGATION_ASYNCHRONOUS);
+
+		// 设置lp算法优化相关参数
+		setOptimizeProperty(conf);
 
 		Job job = new Job(conf, "label propagation");
 		job.setJarByClass(LabelRun.class);
@@ -130,7 +140,7 @@ public class LabelRun {
 		job.setReducerClass(LabelReducer.class);
 
 		job.setMapOutputKeyClass(IntWritable.class);
-		job.setMapOutputValueClass(IntWritable.class);
+		job.setMapOutputValueClass(Text.class);
 
 		job.setNumReduceTasks(1);
 
@@ -143,13 +153,55 @@ public class LabelRun {
 		removeFolder(fs, TMP_LABEL_SWAP);
 		job.waitForCompletion(true);
 
-		swapFolder2File(fs, TMP_LABEL_SWAP, TMP_LABEL);
+		swapFolder2File(fs, TMP_LABEL_SWAP, TMP_LABEL_OPTIMIZE);
 
 		// 获取统计标签发生变化的计数器
 		Counter vertexLabelChangedCounter = job.getCounters().findCounter(
 				JudgeMonitor.COUNTER_GROUP,
 				JudgeMonitor.COUNTER_VERTEX_LABEL_CHANGED);
 		judgeMonitor.setLableChangedVertex(vertexLabelChangedCounter);
+
+		// 获取统计免去处理节点的计数器
+		Counter optimizeVertexCounter = job.getCounters().findCounter(
+				JudgeMonitor.COUNTER_GROUP,
+				JudgeMonitor.COUNTER_VERTEX_OPTIMIZE);
+		judgeMonitor.setOptimizeVertexCounter(optimizeVertexCounter);
+	}
+
+	/**
+	 * 设置lp算法优化需要的参数
+	 * 
+	 * @param conf
+	 */
+	private static void setOptimizeProperty(Configuration conf) {
+		// 设置是否开启lp算法优化
+		conf.setBoolean("lp.optimize.shutdown",
+				PropertyManager.LPA_OPTIMIZE_SHUTDOWN);
+		if (PropertyManager.LPA_OPTIMIZE_SHUTDOWN == true)
+			return;
+		// // 设置标签迭代优化的上限
+		// conf.setFloat("lp.optimize.limit.upper",
+		// PropertyManager.LPA_OPTIMIZE_UPPER_LIMIT);
+		// // 设置标签迭代优化的下限
+		// conf.setFloat("lp.optimize.limit.lower",
+		// PropertyManager.LPA_OPTIMIZE_LOWER_LIMIT);
+
+		double unchangedPercent = judgeMonitor.getUnchangedPercent();
+		OptimizeState currentState = optimizeController.getState();
+		OptimizeState newState = currentState;
+
+		// 设置优化状态
+		if (currentState == OptimizeState.NOT_IN_STATE) {
+			double lowerLimit = PropertyManager.LPA_OPTIMIZE_LOWER_LIMIT;
+			if (lowerLimit <= unchangedPercent)
+				newState = OptimizeState.SET_STATE;
+		} else if (currentState == OptimizeState.SET_STATE) {
+			double upperLimit = PropertyManager.LPA_OPTIMIZE_UPPER_LIMIT;
+			if (upperLimit <= unchangedPercent)
+				newState = OptimizeState.OPTIMIZE_STATE;
+		}
+		optimizeController.setState(newState);
+		conf.setEnum("lp.optimize.state", newState);
 	}
 
 	public static void main(String[] args) throws IOException,
@@ -162,7 +214,10 @@ public class LabelRun {
 		boolean continueReverse;
 		do {
 			judgeMonitor.incrementReverseNum(1);
-			runLabelPropagation(conf, fs);
+
+			runLabelPropagation(conf, fs); // 运行lp算法
+
+			judgeMonitor.printOneReverseEffect(optimizeController.getState());
 			continueReverse = judgeMonitor.judgeReverseStop();
 		} while (continueReverse);
 
