@@ -84,7 +84,7 @@ public class InfoRun {
 		// 设置边统计计数器
 		Counter sideNumCounter = job.getCounters().findCounter(
 				RunMonitor.COUNTER_GROUP, RunMonitor.SIDE_NUM_COUNTER);
-		monitor.setVertexNumCounter(sideNumCounter);
+		monitor.setSideNumCounter(sideNumCounter);
 	}
 
 	/**
