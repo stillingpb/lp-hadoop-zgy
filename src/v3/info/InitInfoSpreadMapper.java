@@ -1,4 +1,4 @@
-package v3.label;
+package v3.info;
 
 import java.io.IOException;
 import java.util.StringTokenizer;
@@ -6,33 +6,25 @@ import java.util.StringTokenizer;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapreduce.Counter;
 import org.apache.hadoop.mapreduce.Mapper;
 
-public class InitGraphMapper extends
+public class InitInfoSpreadMapper extends
 		Mapper<LongWritable, Text, IntWritable, IntWritable> {
 	public void setup(Context context) throws IOException, InterruptedException {
-		graphEdgeNum = context.getCounter(JudgeMonitor.COUNTER_GROUP,
-				JudgeMonitor.COUNTER_EDGES);
+		// NOTHING
 	}
 
-	private Counter graphEdgeNum;
-
-	private IntWritable outVertex1 = new IntWritable();
-	private IntWritable outVertex2 = new IntWritable();
+	IntWritable v1 = new IntWritable();
+	IntWritable v2 = new IntWritable();
+	IntWritable invalidV = new IntWritable(-1); //无效顶点
 
 	public void map(LongWritable key, Text value, Context context)
 			throws IOException, InterruptedException {
 		StringTokenizer token = new StringTokenizer(value.toString());
-		int v1 = Integer.parseInt(token.nextToken());
-		int v2 = Integer.parseInt(token.nextToken());
-
-		outVertex1.set(v1);
-		outVertex2.set(v2);
-		context.write(outVertex1, outVertex2);
-		context.write(outVertex2, outVertex1);
-
-		graphEdgeNum.increment(1);
+		v1.set(Integer.valueOf(token.nextToken()));
+		v2.set(Integer.valueOf(token.nextToken()));
+		context.write(v1, v2);
+		context.write(v2, invalidV);
 	}
 
 	public void cleanup(Context context) throws IOException,
