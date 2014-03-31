@@ -10,7 +10,7 @@ import org.apache.hadoop.mapreduce.Counter;
 import org.apache.hadoop.mapreduce.Mapper;
 
 public class InitGraphMapper extends
-		Mapper<LongWritable, Text, IntWritable, IntWritable> {
+		Mapper<LongWritable, Text, LongWritable, LongWritable> {
 	public void setup(Context context) throws IOException, InterruptedException {
 		graphEdgeNum = context.getCounter(JudgeMonitor.COUNTER_GROUP,
 				JudgeMonitor.COUNTER_EDGES);
@@ -18,14 +18,14 @@ public class InitGraphMapper extends
 
 	private Counter graphEdgeNum;
 
-	private IntWritable outVertex1 = new IntWritable();
-	private IntWritable outVertex2 = new IntWritable();
+	private LongWritable outVertex1 = new LongWritable();
+	private LongWritable outVertex2 = new LongWritable();
 
 	public void map(LongWritable key, Text value, Context context)
 			throws IOException, InterruptedException {
 		StringTokenizer token = new StringTokenizer(value.toString());
-		int v1 = Integer.parseInt(token.nextToken());
-		int v2 = Integer.parseInt(token.nextToken());
+		long v1 = Long.parseLong(token.nextToken());
+		long v2 = Long.parseLong(token.nextToken());
 
 		outVertex1.set(v1);
 		outVertex2.set(v2);

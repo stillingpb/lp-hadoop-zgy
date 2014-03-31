@@ -29,6 +29,7 @@ public class OptimizeController {
 
 	public OptimizeController() {
 		state = OptimizeState.NOT_IN_STATE;
+		//		state = OptimizeState.OPTIMIZE_STATE;
 	}
 
 	/**

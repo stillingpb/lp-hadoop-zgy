@@ -22,7 +22,7 @@ import org.apache.hadoop.mapreduce.Counter;
 import org.apache.hadoop.mapreduce.Mapper;
 
 public class InfoMapper extends
-		Mapper<LongWritable, Text, IntWritable, InfoParam> {
+		Mapper<LongWritable, Text, LongWritable, InfoParam> {
 
 	public void setup(Context context) throws IOException, InterruptedException {
 		Configuration conf = context.getConfiguration();
@@ -39,7 +39,7 @@ public class InfoMapper extends
 		String line;
 		while ((line = in.readLine()) != null) {
 			StringTokenizer token = new StringTokenizer(line);
-			int vertex = Integer.parseInt(token.nextToken());
+			long vertex = Long.parseLong(token.nextToken());
 			int outV = Integer.parseInt(token.nextToken());
 			int spreadRound = Integer.parseInt(token.nextToken());
 			InfoParam infoPara = new InfoParam(vertex, outV, spreadRound);
@@ -48,7 +48,7 @@ public class InfoMapper extends
 		in.close();
 	}
 
-	private Map<Integer, InfoParam> infoData = new HashMap<Integer, InfoParam>();
+	private Map<Long, InfoParam> infoData = new HashMap<Long, InfoParam>();
 
 	private float alpha;
 	private BetaParam beta;
@@ -56,13 +56,13 @@ public class InfoMapper extends
 
 	private Counter spreadCounter;
 
-	private IntWritable outVertex1 = new IntWritable();
-	private IntWritable outVertex2 = new IntWritable();
+	private LongWritable outVertex1 = new LongWritable();
+	private LongWritable outVertex2 = new LongWritable();
 
 	public void map(LongWritable key, Text value, Context context)
 			throws IOException, InterruptedException {
 		StringTokenizer token = new StringTokenizer(value.toString());
-		int v1 = Integer.parseInt(token.nextToken());
+		long v1 = Long.parseLong(token.nextToken());
 		InfoParam param1 = infoData.get(v1);
 		outVertex1.set(v1);
 		context.write(outVertex1, param1);
@@ -72,9 +72,9 @@ public class InfoMapper extends
 			return;
 
 		// 选出出度顶点，传播信息给它们
-		List<Integer> neigV = new ArrayList<Integer>();
+		List<Long> neigV = new ArrayList<Long>();
 		while (token.hasMoreTokens()) {
-			int v2 = Integer.parseInt(token.nextToken());
+			long v2 = Long.parseLong(token.nextToken());
 			neigV.add(v2);
 		}
 
@@ -96,7 +96,7 @@ public class InfoMapper extends
 	 * @throws IOException
 	 * @throws InterruptedException
 	 */
-	private void topStrategyMap(Context context, List<Integer> neigV)
+	private void topStrategyMap(Context context, List<Long> neigV)
 			throws IOException, InterruptedException {
 		int len = neigV.size();
 		int num = (int) (alpha * len);
@@ -105,7 +105,7 @@ public class InfoMapper extends
 
 		InfoParam[] list = new InfoParam[len];
 		int i = 0;
-		for (Integer v : neigV) {
+		for (Long v : neigV) {
 			InfoParam param = infoData.get(v);
 			list[i++] = param;
 		}
@@ -125,7 +125,7 @@ public class InfoMapper extends
 	 * @throws IOException
 	 * @throws InterruptedException
 	 */
-	private void tailStrategyMap(Context context, List<Integer> neigV)
+	private void tailStrategyMap(Context context, List<Long> neigV)
 			throws IOException, InterruptedException {
 		int len = neigV.size();
 		int num = (int) (alpha * len);
@@ -134,7 +134,7 @@ public class InfoMapper extends
 
 		InfoParam[] list = new InfoParam[len];
 		for (int i = 0; i < len; i++) {
-			int v = neigV.get(i);
+			long v = neigV.get(i);
 			InfoParam param = infoData.get(v);
 			list[i] = param;
 		}
@@ -154,7 +154,7 @@ public class InfoMapper extends
 	 * @throws IOException
 	 * @throws InterruptedException
 	 */
-	private void RandomStrategyMap(Context context, List<Integer> neigV)
+	private void RandomStrategyMap(Context context, List<Long> neigV)
 			throws IOException, InterruptedException {
 		int len = neigV.size();
 		int num = (int) (alpha * len);
@@ -176,7 +176,7 @@ public class InfoMapper extends
 		} while (count < num);
 	}
 
-	private void outputSpreadVertex(Context context, IntWritable v,
+	private void outputSpreadVertex(Context context, LongWritable v,
 			InfoParam param) throws IOException, InterruptedException {
 		// 信息已经在之前传递到了该顶点
 		if (param.getSpreadRound() != -1)

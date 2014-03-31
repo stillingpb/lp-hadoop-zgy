@@ -2,13 +2,13 @@ package v3.info;
 
 import java.io.IOException;
 
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Reducer;
 
 public class InfoReducer extends
-		Reducer<IntWritable, InfoParam, IntWritable, Text> {
+		Reducer<LongWritable, InfoParam, LongWritable, Text> {
 
 	public void setup(Context context) throws IOException, InterruptedException {
 //		Configuration conf = context.getConfiguration();
@@ -21,7 +21,7 @@ public class InfoReducer extends
 	 */
 	private Text outText = new Text();
 
-	public void reduce(IntWritable key, Iterable<InfoParam> params,
+	public void reduce(LongWritable key, Iterable<InfoParam> params,
 			Context context) throws IOException, InterruptedException {
 		boolean firstTime = true;
 		for (InfoParam p : params) {

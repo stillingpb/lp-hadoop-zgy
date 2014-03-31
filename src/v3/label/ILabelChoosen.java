@@ -17,7 +17,7 @@ public interface ILabelChoosen {
 	 *            需要获得新标签的顶点的自身的标签
 	 * @return 选择出的节点的新的标签
 	 */
-	public int chooseLabel(Map<Integer, Integer> neighberLabels, int nativeLabel);
+	public long chooseLabel(Map<Long, Integer> neighberLabels, long nativeLabel);
 
 	/**
 	 * 在拥有相同数量的标签中，选择标签值最大的一个标签
@@ -27,11 +27,11 @@ public interface ILabelChoosen {
 	 */
 	public static class MaxEqualChoosen implements ILabelChoosen {
 		@Override
-		public int chooseLabel(Map<Integer, Integer> neighberLabels,
-				int nativeLabel) {
-			int maxLabelSum = 1;
-			int maxLabel = nativeLabel;
-			for (Entry<Integer, Integer> entry : neighberLabels.entrySet()) {
+		public long chooseLabel(Map<Long, Integer> neighberLabels,
+				long nativeLabel) {
+			long maxLabelSum = 1;
+			long maxLabel = nativeLabel;
+			for (Entry<Long, Integer> entry : neighberLabels.entrySet()) {
 				if (maxLabelSum < entry.getValue()) {
 					maxLabelSum = entry.getValue();
 					maxLabel = entry.getKey();
@@ -47,25 +47,23 @@ public interface ILabelChoosen {
 	/**
 	 * 在拥有相同数量的标签中，随机选择一个标签
 	 * 
-	 * @author pb
-	 * 
 	 */
 	public static class RandomEqualChoosen implements ILabelChoosen {
 		private static Random random = new Random(); // 产生随机数
 
 		@Override
-		public int chooseLabel(Map<Integer, Integer> neighberLabels,
-				int nativeLabel) {
-			int maxLabelSum = 1;
-			List<Integer> candidateLabel = new ArrayList<Integer>();
+		public long chooseLabel(Map<Long, Integer> neighberLabels,
+				long nativeLabel) {
+			long maxLabelSum = 1;
+			List<Long> candidateLabel = new ArrayList<Long>();
 			candidateLabel.add(nativeLabel);
-			for (Entry<Integer, Integer> entry : neighberLabels.entrySet()) {
+			for (Entry<Long, Integer> entry : neighberLabels.entrySet()) {
 				if (maxLabelSum < entry.getValue()) {
 					maxLabelSum = entry.getValue();
 					candidateLabel.clear();
-					candidateLabel.add(entry.getValue());
+					candidateLabel.add(entry.getKey());
 				} else if (maxLabelSum == entry.getValue()) {
-					candidateLabel.add(entry.getValue());
+					candidateLabel.add(entry.getKey());
 				}
 			}
 			return candidateLabel.get(random.nextInt(candidateLabel.size()));

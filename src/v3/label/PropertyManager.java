@@ -34,5 +34,5 @@ public class PropertyManager {
 	/**
 	 * 控制是否采用异步方式传递标签
 	 */
-	public static final boolean LABEL_PROPAGATION_ASYNCHRONOUS = false;
+	public static final boolean LABEL_PROPAGATION_ASYNCHRONOUS = true;
 }

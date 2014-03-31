@@ -7,9 +7,9 @@ import java.util.StringTokenizer;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
+import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Counter;
@@ -21,13 +21,13 @@ import v3.label.OptimizeController.OptimizeState;
  * the main worker of lp algorithm
  * 
  */
-public class LabelMapper extends Mapper<LongWritable, Text, IntWritable, Text> {
+public class LabelMapper extends Mapper<LongWritable, Text, LongWritable, Text> {
 
 	/**
 	 * 所有顶点的标签，只能被getVertex()方法使用
 	 */
-	private Map<Integer, Integer> allLabels = new HashMap<Integer, Integer>();// <vertex,label>
-	private Map<Integer, Integer> labelState = new HashMap<Integer, Integer>();// <vertex,state>
+	private Map<Long, Long> allLabels = new HashMap<Long, Long>();// <vertex,label>
+	private Map<Long, Integer> labelState = new HashMap<Long, Integer>();// <vertex,state>
 
 	private ILabelChoosen labelChoose; // 选择标签的算法很多，具体选哪种，由参数决定
 
@@ -39,10 +39,10 @@ public class LabelMapper extends Mapper<LongWritable, Text, IntWritable, Text> {
 	private boolean optimizeShutdown; // 优化状态是否关闭
 	private OptimizeState optimizeState; // 优化状态
 
-	private IntWritable outVertex = new IntWritable();
+	private LongWritable outVertex = new LongWritable();
 	private Text outLabelAndState = new Text(); // <vertex,label,state>
-	private static final int CHANGE_STATE = 1; // 标签发生变化
-	private static final int UNCHANGE_STATE = 0; // 标签未发生变化
+	private static final int CHANGE_STATE = 1; // 标签优化传递时，标识标签发生变化
+	private static final int UNCHANGE_STATE = 0; // 标签优化传递时，标识标签未发生变化
 
 	public void setup(Context context) throws IOException, InterruptedException {
 		Configuration conf = context.getConfiguration();
@@ -68,8 +68,8 @@ public class LabelMapper extends Mapper<LongWritable, Text, IntWritable, Text> {
 			String str;
 			while ((str = inStream.readLine()) != null) {
 				StringTokenizer token = new StringTokenizer(str);
-				int vertex = Integer.parseInt(token.nextToken());
-				int label = Integer.parseInt(token.nextToken());
+				long vertex = Long.parseLong(token.nextToken());
+				long label = Long.parseLong(token.nextToken());
 				int state = Integer.parseInt(token.nextToken());
 				allLabels.put(vertex, label);
 				labelState.put(vertex, state);
@@ -111,7 +111,7 @@ public class LabelMapper extends Mapper<LongWritable, Text, IntWritable, Text> {
 		StringTokenizer token = new StringTokenizer(vertexs.toString());
 
 		// 优化迭代，未发生标签变化的节点不需要更新标签了
-		int vertex = Integer.parseInt(token.nextToken());
+		long vertex = Long.parseLong(token.nextToken());
 		outVertex.set(vertex);
 		if (labelState.get(vertex) == UNCHANGE_STATE) {
 			optimizeVertexCounter.increment(1);
@@ -121,9 +121,9 @@ public class LabelMapper extends Mapper<LongWritable, Text, IntWritable, Text> {
 			return;
 		}
 
-		int oldLabel = getVertexLabel(outVertex.get());
-		Map<Integer, Integer> neighberLabels = getNeighberLabels(token); // 获取邻居节点的标签
-		int newLabel = labelChoose.chooseLabel(neighberLabels,
+		long oldLabel = getVertexLabel(outVertex.get());
+		Map<Long, Integer> neighberLabels = getNeighberLabels(token); // 获取邻居节点的标签
+		long newLabel = labelChoose.chooseLabel(neighberLabels,
 				getVertexLabel(outVertex.get())); // 选择出顶点新的标签
 
 		// 修改顶点的标签
@@ -140,11 +140,11 @@ public class LabelMapper extends Mapper<LongWritable, Text, IntWritable, Text> {
 	private void setStateMap(LongWritable key, Text vertexs, Context context)
 			throws IOException, InterruptedException {
 		StringTokenizer token = new StringTokenizer(vertexs.toString());
-		outVertex.set(Integer.parseInt(token.nextToken())); // 获取顶点
+		outVertex.set(Long.parseLong(token.nextToken())); // 获取顶点
 
-		int oldLabel = getVertexLabel(outVertex.get());
-		Map<Integer, Integer> neighberLabels = getNeighberLabels(token); // 获取邻居节点的标签
-		int newLabel = labelChoose.chooseLabel(neighberLabels,
+		long oldLabel = getVertexLabel(outVertex.get());
+		Map<Long, Integer> neighberLabels = getNeighberLabels(token); // 获取邻居节点的标签
+		long newLabel = labelChoose.chooseLabel(neighberLabels,
 				getVertexLabel(outVertex.get())); // 选择出顶点新的标签
 
 		// 修改顶点的标签
@@ -162,11 +162,11 @@ public class LabelMapper extends Mapper<LongWritable, Text, IntWritable, Text> {
 	private void notInStateMap(LongWritable key, Text vertexs, Context context)
 			throws IOException, InterruptedException {
 		StringTokenizer token = new StringTokenizer(vertexs.toString());
-		outVertex.set(Integer.parseInt(token.nextToken())); // 获取顶点
+		outVertex.set(Long.parseLong(token.nextToken())); // 获取顶点
 
-		int oldLabel = getVertexLabel(outVertex.get());
-		Map<Integer, Integer> neighberLabels = getNeighberLabels(token); // 获取邻居节点的标签
-		int newLabel = labelChoose.chooseLabel(neighberLabels,
+		long oldLabel = getVertexLabel(outVertex.get());
+		Map<Long, Integer> neighberLabels = getNeighberLabels(token); // 获取邻居节点的标签
+		long newLabel = labelChoose.chooseLabel(neighberLabels,
 				getVertexLabel(outVertex.get())); // 选择出顶点新的标签
 
 		// 修改顶点的标签
@@ -186,13 +186,13 @@ public class LabelMapper extends Mapper<LongWritable, Text, IntWritable, Text> {
 	 * @param token
 	 * @return
 	 */
-	private Map<Integer, Integer> getNeighberLabels(StringTokenizer token) {
+	private Map<Long, Integer> getNeighberLabels(StringTokenizer token) {
 		// 将顶点的所有邻居节点遍历出来，放到map中
-		Map<Integer, Integer> neighberLabels = new HashMap<Integer, Integer>(); // <label,appealTimes>
+		Map<Long, Integer> neighberLabels = new HashMap<Long, Integer>(); // <label,appealTimes>
 		neighberLabels.put(outVertex.get(), 1);
 		while (token.hasMoreTokens()) {
-			int neig = Integer.parseInt(token.nextToken()); // 获取邻居节点
-			int label = getVertexLabel(neig); // 获取邻居节点的标签
+			long neig = Long.parseLong(token.nextToken()); // 获取邻居节点
+			long label = getVertexLabel(neig); // 获取邻居节点的标签
 
 			// 统计标签出现过的次数
 			if (neighberLabels.containsKey(label))
@@ -209,7 +209,7 @@ public class LabelMapper extends Mapper<LongWritable, Text, IntWritable, Text> {
 	 * @param vertex
 	 * @param newLabel
 	 */
-	private void asynchronizedLabelChange(int vertex, int newLabel) {
+	private void asynchronizedLabelChange(long vertex, long newLabel) {
 		if (asynchronousLabelChange) // 如果需要异步更新顶点的标签
 			allLabels.put(vertex, newLabel);
 	}
@@ -220,7 +220,7 @@ public class LabelMapper extends Mapper<LongWritable, Text, IntWritable, Text> {
 	 * @param vertex
 	 * @return label
 	 */
-	private int getVertexLabel(int vertex) {
+	private long getVertexLabel(long vertex) {
 		if (!allLabels.containsKey(vertex)) {
 			allLabels.put(vertex, vertex);
 			labelState.put(vertex, UNCHANGE_STATE);

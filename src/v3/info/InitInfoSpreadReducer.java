@@ -3,27 +3,28 @@ package v3.info;
 import java.io.IOException;
 
 import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Reducer;
 
 public class InitInfoSpreadReducer extends
-		Reducer<IntWritable, IntWritable, IntWritable, Text> {
+		Reducer<LongWritable, LongWritable, LongWritable, Text> {
 
 	public void setup(Context context) throws IOException, InterruptedException {
-		beginVertex = context.getConfiguration().getInt(
+		beginVertex = context.getConfiguration().getLong(
 				"info.init.beginvertex", 1);
 	}
 
-	private int beginVertex;
+	private long beginVertex;
 	/**
 	 * 格式 "顶点出度\t到达时间"
 	 */
 	private Text outText = new Text();// 格式 out_v spread_round
 
-	public void reduce(IntWritable key, Iterable<IntWritable> vertexs,
+	public void reduce(LongWritable key, Iterable<LongWritable> vertexs,
 			Context context) throws IOException, InterruptedException {
 		int outV = 0;
-		for (IntWritable vertex : vertexs)
+		for (LongWritable vertex : vertexs)
 			if (vertex.get() != -1) // 如果是有效边
 				outV++;
 		if (beginVertex == key.get())

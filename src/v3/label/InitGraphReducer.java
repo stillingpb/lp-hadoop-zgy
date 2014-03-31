@@ -2,13 +2,13 @@ package v3.label;
 
 import java.io.IOException;
 
-import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Counter;
 import org.apache.hadoop.mapreduce.Reducer;
 
 public class InitGraphReducer extends
-		Reducer<IntWritable, IntWritable, IntWritable, Text> {
+		Reducer<LongWritable, LongWritable, LongWritable, Text> {
 	private Counter vertexNum;
 
 	public void setup(Context context) throws IOException, InterruptedException {
@@ -18,10 +18,10 @@ public class InitGraphReducer extends
 
 	private Text outSides = new Text();
 
-	public void reduce(IntWritable key, Iterable<IntWritable> values,
+	public void reduce(LongWritable key, Iterable<LongWritable> values,
 			Context context) throws IOException, InterruptedException {
 		StringBuilder sb = new StringBuilder();
-		for (IntWritable value : values) {
+		for (LongWritable value : values) {
 			sb.append(value.toString()).append('\t');
 		}
 		outSides.set(sb.toString());

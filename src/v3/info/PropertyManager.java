@@ -4,7 +4,7 @@ public class PropertyManager {
 	/**
 	 * 信息传播时，顶点的传播策略
 	 */
-	public static final BetaParam BETA_PARAM = BetaParam.RANDOM_OUT;
+	public static final BetaParam BETA_PARAM = BetaParam.TOP_OUT;
 
 	/**
 	 * 信息传播时，控制传播节点的比例，例如alphaParam=0.3f,且顶点有10个出度顶点，那么选择30%，也就是3个顶点来传递信息

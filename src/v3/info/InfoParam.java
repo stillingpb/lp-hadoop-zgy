@@ -11,14 +11,14 @@ import org.apache.hadoop.io.Writable;
  * 
  */
 public class InfoParam implements Writable, Comparable<InfoParam> {
-	private int vertex; // 节点
+	private long vertex; // 节点
 	private int outV; // 出度
 	private int spreadRound; // 传递轮次 未传递到，标识为-1
 
 	public InfoParam() {
 	}
 
-	public InfoParam(int vertex, int outV, int spreadRound) {
+	public InfoParam(long vertex, int outV, int spreadRound) {
 		this.vertex = vertex;
 		this.outV = outV;
 		this.spreadRound = spreadRound;
@@ -26,23 +26,23 @@ public class InfoParam implements Writable, Comparable<InfoParam> {
 
 	@Override
 	public void readFields(DataInput in) throws IOException {
-		vertex = in.readInt();
+		vertex = in.readLong();
 		outV = in.readInt();
 		spreadRound = in.readInt();
 	}
 
 	@Override
 	public void write(DataOutput out) throws IOException {
-		out.writeInt(vertex);
+		out.writeLong(vertex);
 		out.writeInt(outV);
 		out.writeInt(spreadRound);
 	}
 
-	public int getVertex() {
+	public long getVertex() {
 		return vertex;
 	}
 
-	public void setVertex(int vertex) {
+	public void setVertex(long vertex) {
 		this.vertex = vertex;
 	}
 

@@ -5,7 +5,7 @@ import java.io.IOException;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Counter;
 import org.apache.hadoop.mapreduce.Job;
@@ -63,10 +63,10 @@ public class InfoRun {
 		job.setMapperClass(InitGraphMapper.class);
 		job.setReducerClass(InitGraphReducer.class);
 
-		job.setMapOutputKeyClass(IntWritable.class);
-		job.setMapOutputValueClass(IntWritable.class);
+		job.setMapOutputKeyClass(LongWritable.class);
+		job.setMapOutputValueClass(LongWritable.class);
 
-		job.setOutputKeyClass(IntWritable.class);
+		job.setOutputKeyClass(LongWritable.class);
 		job.setOutputValueClass(Text.class);
 
 		FileInputFormat.setInputPaths(job, new Path(GRAPH_PATH));
@@ -105,10 +105,10 @@ public class InfoRun {
 		job.setMapperClass(InitInfoSpreadMapper.class);
 		job.setReducerClass(InitInfoSpreadReducer.class);
 
-		job.setMapOutputKeyClass(IntWritable.class);
-		job.setMapOutputValueClass(IntWritable.class);
+		job.setMapOutputKeyClass(LongWritable.class);
+		job.setMapOutputValueClass(LongWritable.class);
 
-		job.setOutputKeyClass(IntWritable.class);
+		job.setOutputKeyClass(LongWritable.class);
 		job.setOutputValueClass(Text.class);
 
 		FileInputFormat.setInputPaths(job, new Path(GRAPH_PATH));
@@ -140,10 +140,10 @@ public class InfoRun {
 		job.setMapperClass(InfoMapper.class);
 		job.setReducerClass(InfoReducer.class);
 
-		job.setMapOutputKeyClass(IntWritable.class);
+		job.setMapOutputKeyClass(LongWritable.class);
 		job.setMapOutputValueClass(InfoParam.class);
 
-		job.setOutputKeyClass(IntWritable.class);
+		job.setOutputKeyClass(LongWritable.class);
 		job.setOutputValueClass(Text.class);
 
 		FileInputFormat.setInputPaths(job, new Path(TMP_GRAPH_PATH));

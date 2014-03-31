@@ -9,20 +9,20 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Mapper;
 
 public class InitGraphMapper extends
-		Mapper<LongWritable, Text, IntWritable, IntWritable> {
+		Mapper<LongWritable, Text, LongWritable, LongWritable> {
 	public void setup(Context context) throws IOException, InterruptedException {
 		// NOTHING
 	}
 
-	IntWritable v1 = new IntWritable();
-	IntWritable v2 = new IntWritable();
-	IntWritable invalidV = new IntWritable(-1); // 无效的顶点
+	LongWritable v1 = new LongWritable();
+	LongWritable v2 = new LongWritable();
+	LongWritable invalidV = new LongWritable(-1); // 无效的顶点
 
 	public void map(LongWritable key, Text value, Context context)
 			throws IOException, InterruptedException {
 		StringTokenizer token = new StringTokenizer(value.toString());
-		v1.set(Integer.valueOf(token.nextToken()));
-		v2.set(Integer.valueOf(token.nextToken()));
+		v1.set(Long.parseLong(token.nextToken()));
+		v2.set(Long.parseLong(token.nextToken()));
 		context.write(v1, v2);
 		context.write(v2, invalidV);
 	}

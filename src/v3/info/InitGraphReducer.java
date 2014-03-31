@@ -2,14 +2,14 @@ package v3.info;
 
 import java.io.IOException;
 
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Counter;
 import org.apache.hadoop.mapreduce.Reducer;
 
 public class InitGraphReducer extends
-		Reducer<IntWritable, IntWritable, IntWritable, Text> {
+		Reducer<LongWritable, LongWritable, LongWritable, Text> {
 
 	public void setup(Context context) throws IOException, InterruptedException {
 		vertexNumCounter = context.getCounter(RunMonitor.COUNTER_GROUP,
@@ -23,10 +23,10 @@ public class InitGraphReducer extends
 
 	private Text outText = new Text();// 格式 "v1\tv2.."
 
-	public void reduce(IntWritable key, Iterable<IntWritable> vertexs,
+	public void reduce(LongWritable key, Iterable<LongWritable> vertexs,
 			Context context) throws IOException, InterruptedException {
 		StringBuilder sb = new StringBuilder();
-		for (IntWritable vertex : vertexs)
+		for (LongWritable vertex : vertexs)
 			if (vertex.get() != -1) { // 如果是有效边
 				sb.append(vertex.get()).append('\t');
 				sideNumCounter.increment(1);

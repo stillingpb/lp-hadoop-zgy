@@ -5,7 +5,7 @@ import java.io.IOException;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Counter;
 import org.apache.hadoop.mapreduce.Job;
@@ -79,10 +79,10 @@ public class LabelRun {
 		job.setMapperClass(InitGraphMapper.class);
 		job.setReducerClass(InitGraphReducer.class);
 
-		job.setMapOutputKeyClass(IntWritable.class);
-		job.setMapOutputValueClass(IntWritable.class);
+		job.setMapOutputKeyClass(LongWritable.class);
+		job.setMapOutputValueClass(LongWritable.class);
 
-		job.setOutputKeyClass(IntWritable.class);
+		job.setOutputKeyClass(LongWritable.class);
 		job.setOutputValueClass(Text.class);
 
 		// FileInputFormat.setInputPaths(job, inputPaths);
@@ -139,12 +139,12 @@ public class LabelRun {
 		job.setMapperClass(LabelMapper.class);
 		job.setReducerClass(LabelReducer.class);
 
-		job.setMapOutputKeyClass(IntWritable.class);
+		job.setMapOutputKeyClass(LongWritable.class);
 		job.setMapOutputValueClass(Text.class);
 
 		job.setNumReduceTasks(1);
 
-		job.setOutputKeyClass(IntWritable.class);
+		job.setOutputKeyClass(LongWritable.class);
 		job.setOutputValueClass(Text.class);
 
 		FileInputFormat.setInputPaths(job, new Path(TMP_GRAPH));
